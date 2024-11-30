@@ -1,23 +1,10 @@
-package Lipids;
+package lipids;
 
-import ceu.biolab.downloadersOfWebResources.DownloaderOfWebResources;
-import ceu.biolab.exceptions.CompoundNotClassifiedException;
-import ceu.biolab.ioDevices.MyFile;
-import ceu.biolab.utilities.Constants;
-import ceu.biolab.utilities.Element;
-
-import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static ceu.biolab.utilities.PeriodicTable.*;
 
-/**
- *
- * @author USUARIO
- * @version: 4.0, 20/07/2016. Modified by Alberto Gil de la Fuente
- */
 public class PatternFinder {
 
     int start = 0;
@@ -207,7 +194,6 @@ public class PatternFinder {
     /**
      * Method that returns the first double in content. If there is no double in
      * content, the method returns 0
-     *
      * @param content
      * @return
      */
@@ -270,7 +256,6 @@ public class PatternFinder {
     }
 
     public static String getSubspecieFromGenusSpecieAndSubspecie(String species) {
-
         String[] wordSpecies = species.split("\\s");
 
         if (wordSpecies.length < 3) {
@@ -286,7 +271,6 @@ public class PatternFinder {
     }
 
     public static String getGenusFromGenusAndSpecie(String genusAndSpecie) throws Exception {
-
         String[] wordSpecies = genusAndSpecie.split("\\s");
 
         if (wordSpecies.length > 2) {
@@ -313,7 +297,6 @@ public class PatternFinder {
 
     /**
      * Read javadoc for getLipidType
-     *
      * @param common_name
      * @return
      */
@@ -325,9 +308,9 @@ public class PatternFinder {
         return lipidType;
     }
 
+
     /**
      * Read javadoc for getNumberOfCarbons
-     *
      * @param common_name
      * @return
      */
@@ -338,7 +321,8 @@ public class PatternFinder {
             numCarbons = getNumberOfCarbons(common_name);
         }
         return numCarbons;
-    }
+    } //! test!!
+
 
     /**
      * Read javadoc for getNumberOfDoubleBonds
@@ -353,14 +337,14 @@ public class PatternFinder {
             numDoubleBonds = getNumberOfDoubleBonds(common_name);
         }
         return numDoubleBonds;
-    }
+    } //! test!!!
 
     /**
      *
      * @param content
      * @return
      */
-    public static String getPrimaryHMDBIDFromHTML(String content) {
+    public static String getPrimaryHMDBIDFromHTML(String content) { //! javadoc?
         String hmdbId = "";
         String patternHMDBID = "HMDB[\\d]{7}";
         Pattern p = Pattern.compile(patternHMDBID);
@@ -372,7 +356,7 @@ public class PatternFinder {
             return "NOT FOUND";
         }
         return hmdbId;
-    }
+    } //! ??
 
     /**
      * Method for get the Lipid Type from Lipid Nomenclature as
@@ -392,25 +376,34 @@ public class PatternFinder {
      */
     public static String getLipidType(String content) {
         String lipidType = "";
-        // [a-zA-Z]{2}([a-zA-Z])*(-([a-zA-Z])+)?\(([a-zA-Z](-)?)?[0-9]+:
-        // First of All, look if the name follows the pattern.
-        String patternLipidType = "[a-zA-Z]{2}([a-zA-Z0-9])*(-([a-zA-Z0-9])+)?\\(([a-zA-Z](-)?)?[0-9]+:";
-        patternLipidType = patternLipidType + "|[a-zA-Z]{2}([a-zA-Z0-9])*(-([a-zA-Z0-9])+)?\\(C[0-9]+";
+
+        // Adapt the pattern to allow for optional spaces and ensure it includes "("
+        String patternLipidType = "[a-zA-Z]{2,5}([a-zA-Z0-9]*)\\s*\\(?";
+        patternLipidType += "|[a-zA-Z]{2,5}([a-zA-Z0-9]*)\\s*[0-9]{1,2}:";
         Pattern p = Pattern.compile(patternLipidType);
         Matcher m = p.matcher(content);
+
         if (m.find()) {
             String lipidTypePartial = m.group();
-            // If the name follows the pattern, extract the lipid type name.
-            String patternLipidTypeName = "[a-zA-Z]{2}([a-zA-Z0-9])*(-([a-zA-Z0-9])+)?\\(([a-zA-Z](-)?)?";
+
+            // Now extract the lipid type up to the first parenthesis
+            String patternLipidTypeName = "[a-zA-Z]{2,5}([a-zA-Z0-9]*)\\s*";
             Pattern p2 = Pattern.compile(patternLipidTypeName);
             Matcher m2 = p2.matcher(lipidTypePartial);
+
             if (m2.find()) {
-                lipidType = m2.group();
+                lipidType = m2.group().trim();  // Trim to clean up any trailing spaces
             }
-            //System.out.println("LIPID TYPE: " + lipidType);
         }
+
+        // Always append the "(" to the lipid type
+        if (!lipidType.isEmpty()) {
+            lipidType += "(";
+        }
+
         return lipidType;
     }
+
 
     /**
      * Method for get the number of Carbons from Lipid Nomenclature as
@@ -489,13 +482,12 @@ public class PatternFinder {
      * <DOUBLE_BONDS> or <OXIDATION> (if it appears), a new expression with same
      * pattern may appear 0 or more times.
      *
-     * @param content
-     * @return
+     * @param content the string that contains the abbreviation
+     * @return the oxidation from the abbreviation
      */
     public static String getOxidationFromAbbrev(String content) {
         Pattern p = Pattern.compile("\\([a-zA-Z]+\\)");
         Matcher m = p.matcher(content);
-        int i = 1;
         String oxidationType = "";
         if (m.find()) {
             oxidationType = m.group();
@@ -509,7 +501,7 @@ public class PatternFinder {
         }
         //System.out.println("TOTAL NUMBER DOUBLEBONDS: " + numDoubleBonds);
         return oxidationType;
-    }
+    } //! test !!
 
     /**
      * Get the list of the chains from the abbreviated form of the lipids:
@@ -545,124 +537,9 @@ public class PatternFinder {
         }
         //System.out.println("TOTAL NUMBER DOUBLEBONDS: " + numDoubleBonds);
         return code;
-    }
+    } //! test!!
 
-    public static boolean checkFormulaElements(String formula) {
-        boolean found = true;
 
-        Pattern p;
-        Matcher m;
-        // p = Pattern.compile("[A-Z][a-z]?\\d*");
-        p = Pattern.compile("[A-Z][a-z]?");
-        String elementString;
-        // DELETE all . in order to check every element
-        String oldFormula = formula;
-        String rest = formula.replaceAll("\\.", "");
-        m = p.matcher(rest);
-        while (m.find()) {
-            elementString = m.group();
-            Element element = Element.valueOf(elementString);
-            boolean isElement = MAPELEMENTS.containsKey(element);
-            //System.out.println("element: " + element + "" + oldFormula);
-            if (!isElement) {
-                // System.out.println("element: " + element + "" + oldFormula);
-                return false;
-            } else {
-
-            }
-            // OLD VERSION!
-            // To check R and X from compounds from kegg
-            // String r = searchFirstOcurrence(element, "[R]\\d*");
-            // String x = searchFirstOcurrence(element, "[X]\\d*");
-            // if (!r.equals("") || !x.equals("")) {
-            //    return false;
-            // } else {
-            //}
-            rest = rest.replaceFirst(elementString, "");
-        }
-        p = Pattern.compile("[a-z]");
-        m = p.matcher(rest);
-        while (m.find()) //if(m.find())
-        {
-            return false;
-        }
-        return found;
-    }
-
-    /**
-     *
-     * @param formula
-     * @return the type of the formula. If formula only has CHNOPS elements
-     * return CHNOPS. If they have CHNOPS+CL, then returns CNHOPSCL. If formula
-     * has another elements, return ALL. If formula has elements which are not
-     * in the periodic table, then returns ""
-     */
-    public static String getTypeFromFormula(String formula) {
-        if (formula == null || formula.equals("")) {
-            return "";
-        }
-        String type;
-        Set<String> setElements = new HashSet<String>();
-
-        Pattern p;
-        Matcher m;
-        // p = Pattern.compile("[A-Z][a-z]?\\d*");
-        p = Pattern.compile("[A-Z][a-z]?");
-        String elementString;
-        // DELETE all . in order to check every element
-        String oldFormula = formula;
-        String rest = formula.replaceAll("\\.", "");
-        m = p.matcher(rest);
-        // Look for compounds from periodic table
-        while (m.find()) {
-            elementString = m.group();
-
-            try {
-                Element element = Element.valueOf(elementString);
-                boolean isElement = MAPELEMENTS.containsKey(element);
-                // System.out.println("element: " + element + " new Formula: " + rest);
-                if (!isElement) {
-                    // The element is not in periodic table
-                    // System.out.println("Not element --> GO OUT");
-                    return "";
-                } else {
-                    // If the element is already in the set, it is not added there.
-                    // System.out.println("Adding element: " + element);
-                    setElements.add(elementString);
-                }
-                rest = rest.replaceFirst(elementString, "");
-            } catch (IllegalArgumentException iae) {
-                return "";
-            }
-        }
-
-        // If there is some elements starting with lower case letter, the element is not in the periodic table
-        p = Pattern.compile("[a-z]");
-        m = p.matcher(rest);
-        while (m.find()) //if(m.find())
-        {
-            // element = m.group();
-            // System.out.println("Lower case Not element: " + element);
-            return "";
-        }
-        //System.out.println("CHNOPS SET: " + SETCHNOPS);
-        //System.out.println("CHNOPSCL SET: " + SETCHNOPSCL);
-        //System.out.println("LIST: " + setElements);
-        if (SETCHNOPS.containsAll(setElements)) {
-            type = "CHNOPS";
-        } else if (SETCHNOPSCL.containsAll(setElements)) {
-            type = "CHNOPSCL";
-        } else if (SETCHNOPSD.containsAll(setElements)) {
-            type = "CHNOPSD";
-        } else if (SETCHNOPSCLD.containsAll(setElements)) {
-            type = "CHNOPSCLD";
-        } else if (setElements.contains("D")) {
-            type = "ALLD";
-        } else {
-            type = "ALL";
-        }
-        return type;
-    }
 
     public static boolean debugFormula(String content) {
         boolean found = true;
@@ -719,27 +596,9 @@ public class PatternFinder {
             //return false;
         }
         return found;
-    }
+    } //! test!!
 
-    /**
-     *
-     * @param inchiKey
-     * @param inchiFileName inchi name to query it locally
-     * @return
-     * @throws CompoundNotClassifiedException
-     */
-    public static List<String> getNodesAncestorsCLASSYFIREFromInChIkey(String inchiKey, String inchiFileName) throws CompoundNotClassifiedException {
-        String classyfireFileName = Constants.CLASSYFIRE_RESOURCES_PATH + inchiFileName + ".ancestors";
-        File classyifire_file = new File(classyfireFileName);
-        if (!classyifire_file.exists()) {
-            //System.out.println("Already exists: " + inchiKey);
-            //return;
-            DownloaderOfWebResources.downloadCLASSYFIREAncestorsFile(inchiKey, inchiFileName);
-        }
-        String content = MyFile.obtainContentOfABigFile(classyfireFileName).toString();
-        return getNodesAncestorsCLASSYFIRE(content);
 
-    }
 
     /**
      * Return the list of ancestors from the HTML. It follow the pattern of the
@@ -759,7 +618,7 @@ public class PatternFinder {
         }
 
         return ancestors;
-    }
+    } //! ??
 
     /**
      * analyze the SMILES and return an array with two values which contains the
@@ -809,51 +668,343 @@ public class PatternFinder {
         arrayCharges[1] = Math.abs(totalCharges);
 
         return arrayCharges;
+    } //! test ????
+
+
+    /**
+     * Method to get the Lipid Type from Lipid Nomenclature as
+     * PE(22:4(7Z,10Z,13Z,16Z)/22:6(4Z,7Z,10Z,13Z,16Z,19Z))
+     * <LIPID_TYPE>([<CONNECTION_TYPE>-]<CARBONS>:<DOUBLE_BONDS>[(<DB_POSITIONs>)]/<CARBONS>:<DOUBLE_BONDS>[(<DB_POSITIONs>)])
+     * Where: Expressions within [] are optional
+     * <LIPID_TYPE> is defined with two capital letters
+     * <CONNECTION_TYPE> is defined with a LETTER and "-". It may appear or not.
+     * <CARBONS> and <DOUBLE_BONDS> are integers and they are separated with ":"
+     * <DB_POSITION> is between "(" and ")" and may appear or not. After
+     * <DOUBLE_BONDS> or <DB_POSITIONS> (if it appears), a new expression with
+     * same pattern may appear 0 or more times.
+     *
+     * @param abbreviation the complete expression as a String
+     * @return the lipid type as a String
+     */
+    public static String getLipidTypeAbbreviation(String abbreviation) {
+        String lipidType = "";
+
+        // Remove text inside square brackets as before
+        abbreviation = abbreviation.replaceAll("\\[[^\\]]*\\]", "");
+
+        // Regex pattern to match lipid type, allowing for optional prefixes like O- or P-
+        String patternLipidType = "[a-zA-Z]{2,3}([a-zA-Z0-9])*(-([a-zA-Z0-9])+)?\\(?(O-|P-)?([a-zA-Z](-)?)?[0-9]+:";
+        patternLipidType = patternLipidType + "|[a-zA-Z]{2,3}([a-zA-Z0-9])*(-([a-zA-Z0-9])+)?\\(?(O-|P-)?C[0-9]+";
+
+        // Compile the pattern
+        Pattern p = Pattern.compile(patternLipidType);
+        Matcher m = p.matcher(abbreviation);
+
+        if (m.find()) {
+            String lipidTypePartial = m.group();
+
+            // Update to also capture lipid type names with O- or P- prefixes
+            String patternLipidTypeName = "[a-zA-Z0-9]{2,3}([a-zA-Z0-9])*(-([a-zA-Z0-9])+)?\\(?(O-|P-)?([a-zA-Z](-)?)?"; // Adapted for O- and P-
+            Pattern p2 = Pattern.compile(patternLipidTypeName);
+            Matcher m2 = p2.matcher(lipidTypePartial);
+
+            if (m2.find()) {
+                lipidType = m2.group();
+            }
+        }
+
+        return lipidType;
     }
 
 
-    public class LipidAbbreviationParser {
-        /**
-         * Method to extract the oxidation type(s) from a lipid abbreviation.
-         * The abbreviation follows the format:
-         * <LIPID_TYPE>([<CONNECTION_TYPE>-]<CARBONS>:<DOUBLE_BONDS>[(OXIDATION)]/<CARBONS>:<DOUBLE_BONDS>[(OXIDATION)])
-         *
-         * @param content The lipid abbreviation string.
-         * @return A string containing the oxidation types found. If multiple types are found, they will be separated by commas.
-         */
-        public static String getOxidationFromAbbrev(String content) {
-            // Regular expression to capture oxidation types (inside parentheses)
-            Pattern p = Pattern.compile("\\(([^)]+)\\)");
-            Matcher m = p.matcher(content);
 
-            StringBuilder oxidationTypes = new StringBuilder();
-            int count = 0;
+    //getLipidType, getChains, getCarbons y getDoubleBonds from Abbreviation:
 
-            // Loop through all the matches for oxidation types
+    /**
+     * Method to get the Lipid Type from Abbreviation as
+     * > <ABBREVIATION>
+     * TG 62:6
+     * []<LIPID_TYPE> <CARBONS>:<DOUBLE_BONDS>[additional information] (it can be: O3; or -name)
+     * Where: Expressions within [] are optional
+     * <LIPID_TYPE> is defined with two capital letters or 3 letters (the first one always capital letter)
+     * <CARBONS> and <DOUBLE_BONDS> are integers and they are separated with ":"
+     * @param abbreviation the complete abbreviation obtained from the file structures.sdf as a String
+     * @return Lipid Type as a String
+     */
+    public static String getLipidTypeFromAbbreviation(String abbreviation) {
+        String lipidType = "";
+
+        // Pattern to capture lipid type with optional prefixes like O- or P- and optional formats
+        String patternLipidTypeAbbreviation = "\\b([a-zA-Z]+)(?:\\s+(O-|P-))?\\s*(\\d+)?:(\\d+)?";
+        Pattern p = Pattern.compile(patternLipidTypeAbbreviation);
+        Matcher m = p.matcher(abbreviation);
+
+        if (m.find()) {
+            // we extract main lipid type
+            String mainLipidType = m.group(1);          // >> "Cer", "FA", "PE"
+            //we may have a "prefix" which will be O- or P- so we need to include that in the lipidtype
+            String optionalPrefix = m.group(2) != null ? m.group(2) : "";
+
+            // format the lipid type with optional prefix
+            lipidType = mainLipidType + "(" + optionalPrefix;
+        }
+
+        return lipidType;
+    }
+
+
+
+    /**
+     * Method to get the Lipid Type from Abbreviation as
+     * > <ABBREVIATION>
+     * TG 62:6
+     * []<LIPID_TYPE> <CARBONS>:<DOUBLE_BONDS>[additional information] (it can be: O3; or -name)
+     * Where: Expressions within [] are optional
+     * <LIPID_TYPE> is defined with two capital letters or 3 letters (the first one always capital letter)
+     * <CARBONS> and <DOUBLE_BONDS> are integers and they are separated with ":"
+     * @param abbreviation the complete abbreviation obtained from the file structures.sdf as a String
+     * @return number of carbons as an int
+     */
+    public static int getNumberOfCarbonsFromAbbreviation(String abbreviation) {
+        int numCarbons = 0;
+        Pattern p = Pattern.compile("[1-9][0-9]*:");
+        Matcher m = p.matcher(abbreviation);
+        while (m.find()) {
+            String carbons = m.group();
+            carbons = carbons.substring(0, carbons.length() - 1);
+            numCarbons += Integer.parseInt(carbons);
+        }
+        return numCarbons;
+    }
+
+    /**
+     * Method for get the Lipid Type from Abbreviation as
+     * > <ABBREVIATION>
+     * TG 62:6
+     * []<LIPID_TYPE> <CARBONS>:<DOUBLE_BONDS>[additional information] (it can be: O3; or -name)
+     * Where: Expressions within [] are optional
+     * <LIPID_TYPE> is defined with two capital letters or 3 letters (the first one always capital letter)
+     * <CARBONS> and <DOUBLE_BONDS> are integers and they are separated with ":"
+     * @param abbreviation the complete abbreviation obtained from the file structures.sdf as a String
+     * @return number of double bonds as an int
+     */
+    public static int getNumberOfDoubleBondsFromAbbreviation(String abbreviation) {
+        int numDoubleBonds = 0;
+        Pattern p = Pattern.compile(":[0-9]*");
+        Matcher m = p.matcher(abbreviation);
+        while (m.find()) {
+            String doubleBonds = m.group();
+            doubleBonds = doubleBonds.substring(1, doubleBonds.length());
+            numDoubleBonds += Integer.parseInt(doubleBonds);
+        }
+        return numDoubleBonds;
+    }
+
+
+
+    /**
+     * This method reads the chains from the abbreviation
+     * TG 16:0
+     * @param abbreviation the abbreviation containing a chain
+     * @return list with the chain obtained from the abbreviation
+     */
+    public static List<String> getListChainsFromAbbreviation(String abbreviation) {
+        List<String> chainsFromAbbrev = new LinkedList<>();
+
+        // Identify chains by pattern such as "16:0", "18:1", etc.
+        Pattern p = Pattern.compile("\\b[1-9][0-9]*:[0-9]\\b");
+        Matcher m = p.matcher(abbreviation);
+
+        while (m.find()) {
+            String chain = m.group();
+            chainsFromAbbrev.add(chain);
+        }
+
+        return chainsFromAbbrev;
+    }
+
+
+
+
+    /**
+     * Method for get the Lipid Type from synonym as
+     * <SYNONYM>
+     * TG(48:2); TG(15:0_15:0_18:2)
+     * <LIPID_TYPE>(NUMBER_CARBONS:NUMBER_DOUBLE_BONDS); <LIPID_TYPE>(<FIRST_CHAIN_NUMBER_C>:<FIRST_NUMBER_DB>_<SECOND_CHAIN_NUMBER_C>:<SECOND_NUMBER_DB>_[]..)
+     * @param synonyms the synonym read from the file: structures.sdf
+     * @return Lipid Type as a String
+     */
+    public static String getLipidTypeFromSynonym(String synonyms) {
+        String lipidType = "";
+
+        // Pattern for lipid types with optional O- or other structural prefixes within parentheses
+        String patternLipidTypeSyn = "^[a-zA-Z]{2,5}-?[a-zA-Z]?\\(?(O-|P-)?";
+        Pattern p = Pattern.compile(patternLipidTypeSyn);
+        Matcher m = p.matcher(synonyms);
+
+        if (m.find()) {
+            lipidType = m.group();
+        }
+        return lipidType;
+    }
+
+
+
+
+    /**
+     * Method for get the number of carbons from synonym as
+     * <SYNONYM>
+     * TG(48:2); TG(15:0_15:0_18:2)
+     * <LIPID_TYPE>(NUMBER_CARBONS:NUMBER_DOUBLE_BONDS); <LIPID_TYPE>(<FIRST_CHAIN_NUMBER_C>:<FIRST_NUMBER_DB>_<SECOND_CHAIN_NUMBER_C>:<SECOND_NUMBER_DB>_[]..)
+     * @param synonyms the synonym read from the file: structures.sdf
+     * @return number of carbons as an integer
+     */
+    public static Integer getNumberCarbonsFromSynonym(String synonyms) {
+        int totalCarbons = 0;
+
+        String[] lipidSegments = synonyms.split(";\\s*");
+        String lipidType = getLipidTypeFromName(lipidSegments[1]);
+
+        if (!lipidType.equalsIgnoreCase("")) {
+            Pattern p = Pattern.compile("([1-9][0-9]*):[0-9](\\([a-zA-Z]+\\))*");
+            Matcher m = p.matcher(lipidSegments[1]);
+
             while (m.find()) {
-                if (count > 0) {
-                    oxidationTypes.append(", ");
+                String chain = m.group();
+                int numCarbons = Integer.parseInt(chain.split(":")[0]);
+                totalCarbons += numCarbons;
+            }
+        }
+        return totalCarbons;
+    }
+
+
+    /**
+     * Method for get the number of double bonds from synonym as
+     * <SYNONYM>
+     * TG(48:2); TG(15:0_15:0_18:2)
+     * <LIPID_TYPE>(NUMBER_CARBONS:NUMBER_DOUBLE_BONDS); <LIPID_TYPE>(<FIRST_CHAIN_NUMBER_C>:<FIRST_NUMBER_DB>_<SECOND_CHAIN_NUMBER_C>:<SECOND_NUMBER_DB>_[]..)
+     * @param synonyms the synonym read from the file: structures.sdf
+     * @return number of double bonds  as an integer
+     */
+    public static Integer getNumberDoubleBondsFromSynonym(String synonyms) {
+        int doubleBonds = 0;
+
+        String[] lipidSegments = synonyms.split(";\\s*");
+        String lipidType = getLipidTypeFromName(lipidSegments[1]);
+
+        if (!lipidType.equalsIgnoreCase("")) {
+            Pattern p = Pattern.compile("([1-9][0-9]*):[0-9](\\([a-zA-Z]+\\))*");
+            Matcher m = p.matcher(lipidSegments[1]);
+
+            while (m.find()) {
+                String chain = m.group();
+                doubleBonds = Integer.parseInt(chain.split(":")[1]);
+            }
+        }
+        return doubleBonds;
+    }
+
+
+    /**
+     * This method gets the different chains of a lipid from the synonym of the file structures.sdf
+     * @param synonyms String that contains the lipid type and its chains
+     * @return A list containing the chains of the lipid
+     */
+    public static List<String> getListChainsFromSynonym(String synonyms) {
+        List<String> chainsFromSyn = new LinkedList<>();
+
+        // Split the input by ';' to handle multiple segments if present
+        String[] lipidSegments = synonyms.split(";\\s*");
+
+        // Patterns to identify standard and non-standard formats
+        Pattern standardPattern = Pattern.compile("[1-9][0-9]*:[0-9](\\([a-zA-Z]+\\))*");
+        Pattern nonStandardPattern = Pattern.compile("[1-9][0-9]*:[0-9]+");
+
+        // We will only add chains if they are found in segments with underscores
+        boolean extractedFromUnderscore = false;
+
+        // Iterate through each segment to extract chains
+        for (String segment : lipidSegments) {
+            // Check if the segment has an underscore, indicating multiple chains
+            if (segment.contains("_")) {
+                // Remove any prefixes (like "TG(") and split by underscores
+                String cleanedSegment = segment.replaceAll(".*\\(", "").replaceAll("\\).*", "");
+                String[] chains = cleanedSegment.split("_");
+
+                // Add each chain to the list
+                chainsFromSyn.addAll(Arrays.asList(chains));
+                extractedFromUnderscore = true;
+                break; // Stop after finding underscore-based chains
+            }
+        }
+
+        // If we didn't extract from underscore-based format, handle the segments normally
+        if (!extractedFromUnderscore) {
+            for (String segment : lipidSegments) {
+                Matcher standardMatcher = standardPattern.matcher(segment);
+
+                while (standardMatcher.find()) {
+                    String chain = standardMatcher.group();
+                    chainsFromSyn.add(chain);
                 }
-                String oxidationType = m.group(1); // Extract oxidation type without parentheses
-                if ("Ke".equals(oxidationType)) {
-                    // Adjust the oxidation type if needed
-                    // oxidationType = "O"; // Uncomment this if you want to replace "Ke" with "O"
-                } else if ("COH".equals(oxidationType)) {
-                    oxidationType = "CHO"; // Adjust "COH" to "CHO"
+            }
+        }
+
+        return chainsFromSyn;
+    }
+
+
+    public static List<String> getListChainsFromNonStandardFormat(String input) {
+        List<String> chains = new LinkedList<>();
+
+        // Adjusted regular expression to find chains in the format "number:number"
+        // even if they are surrounded by non-standard characters.
+        Pattern pattern = Pattern.compile("[1-9][0-9]*:[0-9]+");
+        Matcher matcher = pattern.matcher(input);
+
+        // Extract all matching patterns
+        while (matcher.find()) {
+            chains.add(matcher.group());
+        }
+
+        return chains;
+    }
+
+
+
+    /**
+     * This method gets the different chains of a FAHFA from the synonym of the file structures.sdf
+     * @param synonym  String that contains the FAHFA and its chains
+     * @return the chains of the FAHFA as a List
+     */
+    public static List<String> getListChainsFromFAHFA(String synonym) {
+        List<String> chainsFromSyn = new LinkedList<>();
+
+        String[] lipidSegments = synonym.split("\\s+");
+
+        if (lipidSegments.length > 1) {
+            String firstPart = lipidSegments[1];
+            String[] chains = firstPart.split("/");
+
+            for (String chain : chains) {
+                if (!chain.contains("(")) {
+                    chainsFromSyn.add(chain);
                 }
-                oxidationTypes.append(oxidationType);
-                count++;
             }
 
-            return oxidationTypes.toString();
+            Pattern p = Pattern.compile("\\(([^)]+)\\)");
+            Matcher m = p.matcher(synonym);
+
+            if (m.find()) {
+                String insideParentheses = m.group(1).trim();
+                chainsFromSyn.add(insideParentheses);
+            }
         }
-
-        public static void main(String[] args) {
-            String lipidAbbrev = "PE(22:4/22:6(OH))";
-
-            String oxidation = getOxidationFromAbbrev(lipidAbbrev);
-            System.out.println("Oxidation type(s): " + oxidation);
-        }
-
+        return chainsFromSyn;
+    }
 
 }
+
+
+
