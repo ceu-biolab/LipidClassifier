@@ -1,5 +1,6 @@
 package database;
 
+import ceu.biolab.*;
 import utilities.Utilities;
 
 import javax.swing.*;
@@ -361,19 +362,19 @@ public class Database {
      * This method inserts a compound in the database
      * @param casId cas Id of the compound as a string. Can be null
      * @param name the name of the compound as a string
-     * @param formula the formula of the compound as a string
+     * @param formulaString the formula of the compound as a string
      * @param mass the mass of the compound as a string
      * @param chargeType the type of charge as an Integer: 0 for neutral, 1 for positive, 2 for negative
      * @param numCharges the number of charges as an integer positive
-     * @param formulaType the formula type as a string which can take the values: CHNOPS, CHNOPSCL or ALL
+     * @param formulaTypeString the formula type as a string which can take the values: CHNOPS, CHNOPSCL or ALL
      * @param compoundType the type of compound as an integer which can take the values: 0 for metabolite, 1 for lipid, 2 for peptide
      * @param compoundStatus the status of the compound as an integer which can take the values: 0 for expected, 1 for detected, 2 for quantified and 3 for predicted
      * @param logP logP as a string
      * @return the generated id of the compound inserted in the DB
      */
-    public static int insertCompound(Connection connection, String casId, String name, String formula, String mass,
-                                     Integer chargeType, Integer numCharges, String formulaType,
-                                     Integer compoundType, Integer compoundStatus, String logP) {
+    public static int insertCompound(Connection connection, String casId, String name, String formulaString, String mass,
+                                     Integer chargeType, Integer numCharges, String formulaTypeString,
+                                     Integer compoundType, Integer compoundStatus, String logP) throws IncorrectAdduct, NotFoundElement, IncorrectFormula {
         if (casId == null || casId.equalsIgnoreCase("null") || casId.equals("")) {
             casId = "NULL";
         } else {
@@ -384,22 +385,25 @@ public class Database {
         } else {
             name = "\"" + name + "\"";
         }
-        if (formula == null || formula.equalsIgnoreCase("null") || formula.equals("")) {
-            formula = "NULL";
+        if (formulaString == null || formulaString.equalsIgnoreCase("null") || formulaString.equals("")) {
+            formulaString = "NULL";
         } else {
-            formula = "'" + formula + "'";
+            formulaString = "'" + formulaString + "'";
         }
         if (mass == null || mass.equalsIgnoreCase("null") || mass.equals("")) {
             mass = "NULL";
         }
-        if (formulaType.equalsIgnoreCase("null") || formulaType.equals("")) {
-            formulaType = "ALL";
+        if (formulaTypeString.equalsIgnoreCase("null") || formulaTypeString.equals("")) {
+            formulaTypeString = "ALL";
         }
         if (logP == null || logP.equalsIgnoreCase("null") || logP.equals("")) {
             logP = "NULL";
         }
+        formulaTypeString = "'" + formulaTypeString + "'";
+        Formula formula = Formula.formulaFromStringHill(formulaTypeString, null, null);
+        FormulaType formulaType = formula.getType(); //formulaValidation
         int formulaTypeInt = Utilities.getIntChemAlphabet(formulaType);
-        formulaType = "'" + formulaType + "'";
+
 
         String insertion = "INSERT IGNORE INTO compounds(cas_id, compound_name, formula, mass, "
                 + "charge_type, charge_number, formula_type, formula_type_int, "
@@ -410,11 +414,11 @@ public class Database {
         try (PreparedStatement stmt = connection.prepareStatement(insertion)) {
             stmt.setString(1, casId);
             stmt.setString(2, name);
-            stmt.setString(3, formula);
+            stmt.setString(3, formulaString);
             stmt.setString(4, mass);
             stmt.setInt(5, chargeType);
             stmt.setInt(6, numCharges);
-            stmt.setString(7, formulaType);
+            stmt.setString(7, formulaTypeString);
             stmt.setInt(8, formulaTypeInt);
             stmt.setInt(9, compoundType);
             stmt.setInt(10, compoundStatus);

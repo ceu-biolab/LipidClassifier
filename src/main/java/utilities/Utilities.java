@@ -4,6 +4,9 @@ import database.Database;
 
 import java.sql.SQLException;
 import java.sql.Statement;
+import ceu.biolab.*;
+
+import static ceu.biolab.Formula.MAPCHEMALPHABET;
 
 
 public class Utilities {
@@ -28,7 +31,7 @@ public class Utilities {
 
     /**
      *
-     * @param inputChemAlphabet
+     * @param formulaType
      * @return the formula type as int according to the chemAlphabet or 4 (ALL) by default (No deuterium)
      */
     public static int getIntChemAlphabet(FormulaType formulaType) {

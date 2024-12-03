@@ -20,21 +20,13 @@ public class LipidCategoryMapper {
 
 
     public static void main(String[] args) {
-        String outputFile = "lipidTypeClassification.csv";
-
-        String file = "C:/Users/34611/Desktop/INGENIERIA_BIOMEDICA/CUARTO_CARRERA/PROYECTOSII/LipidClassifier/lipidTypeClassification_AJ.csv";
+        String file = "C:/Users/34611/Desktop/INGENIERIA_BIOMEDICA/CUARTO_CARRERA/PROYECTOSII/LipidClassifier/lipidTypeClassification.csv";
 
 
         try {
             //** conectar a la base de datos MySQL y leer los tipos de lípidos (lipid_type)
             Database db = new Database();
             Connection connection = db.getConnection();
-
-            //we initialize the lipid equivalents such as Lyso lipids
-            initializeLipidTypeEquivalents();
-
-            allLipids = ReadLMFile.readLipidDetailsFromLMFile(connection, lipidTypeEquivalents);
-            lipidTypesFromDB = DBImplementation.readDatabaseSQL(connection);
 
             lipidTypeMap = LipidType.buildLipidTypeMap(file);
 
@@ -54,10 +46,16 @@ public class LipidCategoryMapper {
                 System.out.println();
             }
 
+            //we initialize the lipid equivalents such as Lyso lipids
+            initializeLipidTypeEquivalents();
+
+            allLipids = ReadLMFile.readLipidDetailsFromLMFile(connection, lipidTypeEquivalents);
+            lipidTypesFromDB = DBImplementation.readDatabaseSQL(connection);
+
+
+
             //**DBImplementation.updateLipidTypesWithHeadAndFragmentation(connection, lipidTypeMap); //DONE
 
-
-            //**CSV.writeToCSV(outputFile, lipidTypes, lipidTypeEquivalents);
 
 
         } catch (Exception e) {

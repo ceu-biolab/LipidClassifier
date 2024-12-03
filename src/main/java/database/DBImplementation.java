@@ -4,7 +4,7 @@ import lipids.LMLipid;
 import lipids.LipidCategoryMapper;
 import lipids.LipidType;
 import lipids.PatternFinder;
-
+import ceu.biolab.*;
 import java.sql.*;
 import java.util.*;
 
@@ -47,7 +47,7 @@ public class DBImplementation {
      * @param connection connection to DB
      * @param lipid the lipid to be inserted as a LMLipid
      */
-    public static void insertLipidsIntoDatabase(Connection connection, LMLipid lipid) {
+    public static void insertLipidsIntoDatabase(Connection connection, LMLipid lipid) throws IncorrectFormula, IncorrectAdduct, NotFoundElement {
         try {
             // Insert classification into lm_classification table and retrieve ID
             int lmClassificationId = Database.insertLmClassification(connection, lipid.getCategory(), lipid.getMainClass(), lipid.getSubClass(), lipid.getClassLevel4());
@@ -65,22 +65,22 @@ public class DBImplementation {
                 if(compoundId == -1){
                     String casID = null;
                     String compound_name = lipid.getName();
-                    String formula = lipid.getFormula();
+                    String formulaString = lipid.getFormula();
                     String mass = lipid.getMass();
                     String inChI = lipid.getInChi();
                     String smiles = lipid.getSmiles();
                     int[] charges = PatternFinder.getChargeFromSmiles(smiles);
                     int chargeType = charges[0];
                     int numCharges = charges[1];
-                    //! formula validation
-                    FormulaType formulaTypeEnum = getType(); //formulaValidation
+                    Formula formula = Formula.formulaFromStringHill(formulaString, null, null);
+                    FormulaType formulaTypeEnum = formula.getType(); //formulaValidation
                     String formulaType = formulaTypeEnum.name();
 
                     int compoundType = 1; //lipids are always 1
                     int compoundStatus = 0;
                     String logP = null;
 
-                    compoundId = Database.insertCompound(connection, casID, compound_name, formula, mass, chargeType, numCharges, formulaType, compoundType, compoundStatus, logP);
+                    compoundId = Database.insertCompound(connection, casID, compound_name, formulaType, mass, chargeType, numCharges, formulaType, compoundType, compoundStatus, logP);
                     Database.insertIdentifiers(connection, compoundId, inChI, lipid.getinchiKey(), smiles);
                 }
 

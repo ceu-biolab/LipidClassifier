@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.util.*;
 
+import ceu.biolab.IncorrectAdduct;
+import ceu.biolab.IncorrectFormula;
+import ceu.biolab.NotFoundElement;
 import database.DBImplementation;
 import lipids.*;
 
@@ -23,7 +26,7 @@ public class ReadLMFile {
      * number of carbons and double bonds, and chains*
      * @param lipidTypeEquivalents
      */
-    public static  List<LMLipid> readLipidDetailsFromLMFile(Connection connection, Map<String, String> lipidTypeEquivalents) {
+    public static  List<LMLipid> readLipidDetailsFromLMFile(Connection connection, Map<String, String> lipidTypeEquivalents) throws IncorrectAdduct, NotFoundElement, IncorrectFormula {
         List<LMLipid> allLipids  = new ArrayList<>();
         int lmIDCount =0;
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
