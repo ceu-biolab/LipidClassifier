@@ -618,7 +618,7 @@ public class PatternFinder {
         }
 
         return ancestors;
-    } //! ??
+    }
 
     /**
      * analyze the SMILES and return an array with two values which contains the
@@ -1003,6 +1003,7 @@ public class PatternFinder {
         }
         return chainsFromSyn;
     }
+
 
 }
 

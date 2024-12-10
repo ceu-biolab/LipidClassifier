@@ -71,8 +71,7 @@ public class ReadLMFile {
                 } else if (line.trim().equals("> <INCHI_KEY>")) {
                     inchiKey = br.readLine().trim();
                 } else if (line.trim().equals("> <INCHI>")) {
-                    String result = br.readLine().trim();
-                    inchiKey =  result.substring(6); // Removes "InChI=" (6 characters)
+                    inChi = br.readLine().trim();
                 }  else if (line.trim().equals("> <SMILES>")) {
                     smiles = br.readLine().trim();
                 } else if (line.trim().equals("$$$$")) {

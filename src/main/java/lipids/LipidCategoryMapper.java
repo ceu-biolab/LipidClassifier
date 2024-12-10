@@ -53,6 +53,9 @@ public class LipidCategoryMapper {
             lipidTypesFromDB = DBImplementation.readDatabaseSQL(connection);
 
 
+            DBImplementation.insertLipidsIntoDatabase(connection, allLipids);
+            DBImplementation.updateChainsDB(connection, allLipids);
+
 
             //**DBImplementation.updateLipidTypesWithHeadAndFragmentation(connection, lipidTypeMap); //DONE
 

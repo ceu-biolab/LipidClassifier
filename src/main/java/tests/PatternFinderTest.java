@@ -1,5 +1,6 @@
 package tests;
 
+import ceu.biolab.*;
 import lipids.PatternFinder;
 
 import org.junit.jupiter.api.Test;
@@ -369,6 +370,16 @@ import static org.junit.jupiter.api.Assertions.*;
         }
 
 
+
+        @Test
+        void test() throws IncorrectAdduct, NotFoundElement, IncorrectFormula {
+            String formulaString = "C20H44OAs";
+            Formula formula = Formula.formulaFromStringHill(formulaString, null, null);
+            FormulaType formulaType = formula.getType();
+            String expected = formulaType.name();
+            String actual = "ALL";
+            assertEquals(expected, actual, "not match");
+        }
 
 
     }

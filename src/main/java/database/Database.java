@@ -5,9 +5,12 @@ import utilities.Utilities;
 
 import javax.swing.*;
 import java.sql.*;
+import java.text.Normalizer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 //import static utilities.PeriodicTable.MAPELEMENTS;
 //import static utilities.PeriodicTable.*;
@@ -88,6 +91,20 @@ public class Database {
 
             }
         }
+
+
+
+    public static void insertIntoCompoundsLM(Connection connection, int compoundId, String lmId) throws SQLException {
+        // Insert data or update if the combination already exists
+        String insertQuery = "INSERT IGNORE INTO compounds_lm (compound_id, lm_id) VALUES (?, ?)";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setInt(1, compoundId);
+            preparedStatement.setString(2, lmId);
+            preparedStatement.executeUpdate();
+
+        }
+    }
 
 
     /**
@@ -325,35 +342,53 @@ public class Database {
     /**
      * Insert the structures of the compound Id in the database
      *
-     * @param compoundId
-     * @param inChI
-     * @param inChIKey
-     * @param SMILES
+     * @param compoundId the compound ID generated
+     * @param inChI the inchi of the lipid to be inserted as a String
+     * @param inChIKey the inchikey of the lipid to be inserted as a String
+     * @param smiles the smiles of the lipid to be inserted as a String
      */
-    public static void insertIdentifiers(Connection connection, int compoundId, String inChI, String inChIKey, String SMILES) {
-        if (Database.getInChIKeyFromCompound(connection, compoundId) == -1){
-            if (inChI != null && SMILES != null && inChIKey != null
-                    && !inChI.equals("") && !inChIKey.equals("") && !SMILES.equals("")) {
+    public static void insertIdentifiers(Connection connection, int compoundId, String inChI, String inChIKey, String smiles) {
+        // Check if the compound already has an associated inChIKey
+        if (Database.getInChIKeyFromCompound(connection, compoundId) == -1) {
+            // Validate input strings
+            if (inChI != null && !inChI.isEmpty() &&
+                    inChIKey != null && !inChIKey.isEmpty() &&
+                    smiles != null && !smiles.isEmpty()) {
+
                 String insertion = "INSERT IGNORE INTO compound_identifiers(compound_id, inchi, inchi_key, smiles) VALUES(?,?,?,?);";
+
                 try (PreparedStatement stmt = connection.prepareStatement(insertion)) {
-                    inChI = Utilities.escapeSQL(inChI);
-                    SMILES = Utilities.escapeSQL(SMILES);
-
+                    // Bind parameters for the prepared statement
                     stmt.setInt(1, compoundId);
-                    stmt.setString(2, inChI);
+                    stmt.setString(2, inChI);  // No need to escape; PreparedStatement handles it
                     stmt.setString(3, inChIKey);
-                    stmt.setString(4, SMILES);
+                    stmt.setString(4, smiles);
 
-                    ResultSet rs = stmt.executeQuery();
-                    if (rs.next()) {
-                        Utilities.executeNewIDUWithEx(insertion);
+                    // Print debug information
+                    System.out.println("Compound ID: " + compoundId);
+                    System.out.println("Inchi: " + inChI);
+                    System.out.println("Inchi Key: " + inChIKey);
+                    System.out.println("Smiles: " + smiles);
+
+                    // Execute the INSERT statement
+                    int affectedRows = stmt.executeUpdate();
+                    if (affectedRows > 0) {
+                        System.out.println("Identifier successfully inserted -> compoundId: " + compoundId);
+                    } else {
+                        System.out.println("Identifier not inserted (likely due to INSERT IGNORE) -> compoundId: " + compoundId);
                     }
                 } catch (SQLException ex) {
-                    System.out.println("Identifier not inserted -> compoundId: " + compoundId + " InCHI: " + inChI);
+                    System.out.println("Error inserting identifier for compoundId: " + compoundId + " InCHI: " + inChI);
+                    ex.printStackTrace(); // Log detailed error for debugging
                 }
+            } else {
+                System.out.println("Invalid input data for compoundId: " + compoundId);
             }
+        } else {
+            System.out.println("Compound already has an associated inChIKey -> compoundId: " + compoundId);
         }
     }
+
 
 
 
@@ -375,73 +410,93 @@ public class Database {
     public static int insertCompound(Connection connection, String casId, String name, String formulaString, String mass,
                                      Integer chargeType, Integer numCharges, String formulaTypeString,
                                      Integer compoundType, Integer compoundStatus, String logP) throws IncorrectAdduct, NotFoundElement, IncorrectFormula {
-        if (casId == null || casId.equalsIgnoreCase("null") || casId.equals("")) {
-            casId = "NULL";
-        } else {
-            casId = "'" + casId + "'";
-        }
-        if (name == null || name.equalsIgnoreCase("null") || name.equals("")) {
-            name = "NULL";
-        } else {
-            name = "\"" + name + "\"";
-        }
-        if (formulaString == null || formulaString.equalsIgnoreCase("null") || formulaString.equals("")) {
-            formulaString = "NULL";
-        } else {
-            formulaString = "'" + formulaString + "'";
-        }
-        if (mass == null || mass.equalsIgnoreCase("null") || mass.equals("")) {
-            mass = "NULL";
-        }
-        if (formulaTypeString.equalsIgnoreCase("null") || formulaTypeString.equals("")) {
-            formulaTypeString = "ALL";
-        }
-        if (logP == null || logP.equalsIgnoreCase("null") || logP.equals("")) {
-            logP = "NULL";
-        }
-        formulaTypeString = "'" + formulaTypeString + "'";
-        Formula formula = Formula.formulaFromStringHill(formulaTypeString, null, null);
-        FormulaType formulaType = formula.getType(); //formulaValidation
+
+        // Determine formula type from the provided formula
+        Formula formula = Formula.formulaFromStringHill(formulaString, null, null);
+        FormulaType formulaType = formula.getType();
+        formulaTypeString = formulaType.name(); // Ensure we have a valid formula type string
         int formulaTypeInt = Utilities.getIntChemAlphabet(formulaType);
 
-
+        // SQL query with placeholders
         String insertion = "INSERT IGNORE INTO compounds(cas_id, compound_name, formula, mass, "
-                + "charge_type, charge_number, formula_type, formula_type_int, "
-                + "compound_type, compound_status, logP) VALUES(?,?,?,?,?,?,?,?,?,?,?);";
+                + "charge_type, charge_number, formula_type, compound_type, compound_status, formula_type_int, logP) VALUES(?,?,?,?,?,?,?,?,?,?,?);";
 
+        try (PreparedStatement stmt = connection.prepareStatement(insertion, Statement.RETURN_GENERATED_KEYS)) {
+            // Handle NULL values and bind parameters
+            if (casId == null || casId.equalsIgnoreCase("null") || casId.isEmpty()) {
+                stmt.setNull(1, Types.VARCHAR);
+            } else {
+                stmt.setString(1, casId);
+            }
 
+            if (name == null || name.equalsIgnoreCase("null") || name.isEmpty()) {
+                stmt.setNull(2, Types.VARCHAR);
+            } else {
+                stmt.setString(2, name);
+            }
 
-        try (PreparedStatement stmt = connection.prepareStatement(insertion)) {
-            stmt.setString(1, casId);
-            stmt.setString(2, name);
-            stmt.setString(3, formulaString);
-            stmt.setString(4, mass);
+            if (formulaString == null || formulaString.equalsIgnoreCase("null") || formulaString.isEmpty()) {
+                stmt.setNull(3, Types.VARCHAR);
+            } else {
+                stmt.setString(3, formulaString);
+            }
+
+            if (mass == null || mass.equalsIgnoreCase("null") || mass.isEmpty()) {
+                stmt.setNull(4, Types.DOUBLE);
+            } else {
+                stmt.setDouble(4, Double.parseDouble(mass));
+            }
+
             stmt.setInt(5, chargeType);
             stmt.setInt(6, numCharges);
             stmt.setString(7, formulaTypeString);
-            stmt.setInt(8, formulaTypeInt);
-            stmt.setInt(9, compoundType);
-            stmt.setInt(10, compoundStatus);
-            stmt.setString(11, logP);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return executeNewInsertion(stmt, insertion);
+            stmt.setInt(8, compoundType);
+            stmt.setInt(9, compoundStatus);
+            stmt.setInt(10, formulaTypeInt);
+
+            if (logP == null || logP.equalsIgnoreCase("null") || logP.isEmpty()) {
+                stmt.setNull(11, Types.DOUBLE);
+            } else {
+                stmt.setDouble(11, Double.parseDouble(logP));
             }
+
+            // Execute the query and retrieve the generated key
+            return executeNewInsertion(stmt);
+
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error inserting compound into the database: " + e.getMessage(), e);
         }
-        return -1; // chain does not exist
     }
+
 
 
 
     /**
      * Executes the insert and return the First generated Key
      * @param statement the statement as a prepared statement
-     * @param update the query as a string (insert, delete or update)
+//     * @param update the query as a string (insert, delete or update)
      * @return the Id of the insertion
      */
-    public static int executeNewInsertion(PreparedStatement statement, String update) { // insertar, borrar o actualizar
+
+    public static int executeNewInsertion(PreparedStatement statement) { // Insert, delete, or update
+        int id = 0;
+        try {
+            // Execute the prepared statement
+            statement.executeUpdate();
+
+            // Retrieve the generated keys (if available)
+            try (ResultSet provRS = statement.getGeneratedKeys()) {
+                if (provRS.next()) {
+                    id = provRS.getInt(1); // Assuming the first column is the generated ID
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error during SQL execution: " + e.getMessage(), e);
+        }
+        return id;
+    }
+
+/*    public static int executeNewInsertion(PreparedStatement statement, String update) { // insertar, borrar o actualizar
         int id = 0;
         try {
             statement.executeUpdate(update, Statement.RETURN_GENERATED_KEYS);
@@ -456,6 +511,6 @@ public class Database {
         //System.out.println("\n GENERATED KEY of " + update + " : " + id);
         return id;
     }
-
+ */
 
 }

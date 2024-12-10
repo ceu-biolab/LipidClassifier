@@ -5,6 +5,8 @@ import lipids.LipidCategoryMapper;
 import lipids.LipidType;
 import lipids.PatternFinder;
 import ceu.biolab.*;
+
+import javax.xml.crypto.Data;
 import java.sql.*;
 import java.util.*;
 
@@ -30,7 +32,6 @@ public class DBImplementation {
 
             while (rs.next()) {
                 String lipidTypeDB = rs.getString("lipid_type");
-                //LipidType.buildLipidTypeMap(file, lipidTypeDB);
                 lipidTypes.add(lipidTypeDB);
             }
             rs.close();
@@ -43,11 +44,63 @@ public class DBImplementation {
 
 
     /**
-     * This method inserts all the lipids into the DB
+     * This method inserts all the lipids as well as the classification into the DB
      * @param connection connection to DB
-     * @param lipid the lipid to be inserted as a LMLipid
+     * @param allLipids the lipids to be inserted as a LMLipid (if they aren't already)
+     * @throws IncorrectFormula
+     * @throws IncorrectAdduct
+     * @throws NotFoundElement
      */
-    public static void insertLipidsIntoDatabase(Connection connection, LMLipid lipid) throws IncorrectFormula, IncorrectAdduct, NotFoundElement {
+    public static void insertLipidsIntoDatabase(Connection connection, List<LMLipid> allLipids) throws IncorrectFormula, IncorrectAdduct, NotFoundElement {
+        try {
+            for(LMLipid lipid : allLipids) {
+                // Insert classification into lm_classification table and retrieve ID
+                int lmClassificationId = Database.insertLmClassification(connection, lipid.getCategory(), lipid.getMainClass(), lipid.getSubClass(), lipid.getClassLevel4());
+
+                // Get lipid's ID (lm_id) to find the compound_id
+                String lipidID = lipid.getLmId();
+                int compoundId = Database.getCompoundIDFromLMID(connection, lipidID);
+
+                // Insert into compounds_lm_classification if compoundId is valid
+                if (compoundId != -1) {
+                    Database.insertIntoCompoundsLMClassification(connection, compoundId, lmClassificationId);
+                } else {
+                    compoundId = Database.getCompoundIdFromInchiKey(connection, lipid.getinchiKey());
+                    System.out.println("Lipid with ID not found: " + lipidID);
+                    if (compoundId == -1) {
+                        String casID = null;
+                        String compound_name = lipid.getName();
+                        String formulaString = lipid.getFormula();
+                        String mass = lipid.getMass();
+                        String inChI = lipid.getInChi();
+                        String smiles = lipid.getSmiles();
+                        int[] charges = PatternFinder.getChargeFromSmiles(smiles);
+                        int chargeType = charges[0];
+                        int numCharges = charges[1];
+                        Formula formula = Formula.formulaFromStringHill(formulaString, null, null);
+                        FormulaType formulaTypeEnum = formula.getType(); //formulaValidation
+                        String formulaType = formulaTypeEnum.name();
+
+                        int compoundType = 1; //lipids are always 1
+                        int compoundStatus = 0;
+                        String logP = null;
+
+                        compoundId = Database.insertCompound(connection, casID, compound_name, formulaString, mass, chargeType, numCharges, formulaType, compoundType, compoundStatus, logP);
+                        Database.insertIdentifiers(connection, compoundId, inChI, lipid.getinchiKey(), smiles);
+
+                    }
+                    Database.insertIntoCompoundsLM(connection, compoundId, lipidID);
+                    Database.insertIntoCompoundsLMClassification(connection, compoundId, lmClassificationId);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public static void insertLipidIntoDatabase(Connection connection, LMLipid lipid) throws IncorrectFormula, IncorrectAdduct, NotFoundElement {
         try {
             // Insert classification into lm_classification table and retrieve ID
             int lmClassificationId = Database.insertLmClassification(connection, lipid.getCategory(), lipid.getMainClass(), lipid.getSubClass(), lipid.getClassLevel4());
@@ -59,10 +112,10 @@ public class DBImplementation {
             // Insert into compounds_lm_classification if compoundId is valid
             if (compoundId != -1) {
                 Database.insertIntoCompoundsLMClassification(connection, compoundId, lmClassificationId);
-            }else{
+            } else {
                 compoundId = Database.getCompoundIdFromInchiKey(connection, lipid.getinchiKey());
                 System.out.println("Lipid with ID not found: " + lipidID);
-                if(compoundId == -1){
+                if (compoundId == -1) {
                     String casID = null;
                     String compound_name = lipid.getName();
                     String formulaString = lipid.getFormula();
@@ -80,10 +133,12 @@ public class DBImplementation {
                     int compoundStatus = 0;
                     String logP = null;
 
-                    compoundId = Database.insertCompound(connection, casID, compound_name, formulaType, mass, chargeType, numCharges, formulaType, compoundType, compoundStatus, logP);
+                    compoundId = Database.insertCompound(connection, casID, compound_name, formulaString, mass, chargeType, numCharges, formulaType, compoundType, compoundStatus, logP);
                     Database.insertIdentifiers(connection, compoundId, inChI, lipid.getinchiKey(), smiles);
-                }
 
+                }
+                Database.insertIntoCompoundsLM(connection, compoundId, lipidID);
+                Database.insertIntoCompoundsLMClassification(connection, compoundId, lmClassificationId);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -96,15 +151,14 @@ public class DBImplementation {
      * @param connection connection to the DB
      * @param lipids lipids with the chains to be updated as a List
      */
-    public static void updateChainsDB(Connection connection, List<LMLipid> lipids) {
+    public static void updateChainsDB(Connection connection, List<LMLipid> lipids) throws IncorrectAdduct, NotFoundElement, IncorrectFormula {
         int notFound = 0;
         try {
             for (LMLipid lipid : lipids) {
                 // Get the compound ID based on the lipid's lmId
                 int compoundId = Database.getCompoundIDFromLMID(connection, lipid.getLmId());
                 if (compoundId == -1) {
-                    // If compound ID is not found, skip this lipid
-                    System.out.println("Lipid with id: " + lipid.getLmId() + " not found");
+                    insertLipidIntoDatabase(connection, lipid);
                     notFound++;
                     continue;
                 }
@@ -145,8 +199,9 @@ public class DBImplementation {
                         Database.insertIntoCompoundChain(connection, compoundId, chainId, numChains);
                     }
                 }
+                //System.out.println("Lipid with id: " + lipid.getLmId() + " added");
             }
-            System.out.println("Number of compounds not found: " + notFound);
+            //System.out.println("Number of compounds not found: " + notFound);
         } catch (SQLException e) {
             e.printStackTrace();
         }
