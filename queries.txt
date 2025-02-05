@@ -13,20 +13,22 @@ CREATE TABLE compounds_lm_classification (
     compound_id INT,
     lm_classification_id INT,
     PRIMARY KEY (compound_id , lm_classification_id ),
-    FOREIGN KEY (compound_id ) REFERENCES compounds_lm(compound_id),
+    FOREIGN KEY (compound_id ) REFERENCES compounds(compound_id),
     FOREIGN KEY (lm_classification_id ) REFERENCES lm_classification (lm_classification_id)
 );
 
+
+DELIMITER $$
 
 CREATE trg_compound_chain_insert
 AFTER INSERT ON compound_chain
 FOR EACH ROW
 BEGIN
     UPDATE compounds_lipids_classification
-    SET num_chains = num_chains + :NEW.number_chains
-    WHERE compound_id = :NEW.compound_id;
-END;
-/
+    SET num_chains = num_chains + NEW.number_chains
+    WHERE compound_id = NEW.compound_id;
+END$$
+
 
 DELIMITER $$
 
@@ -39,7 +41,6 @@ BEGIN
     WHERE compound_id = NEW.compound_id;
 END$$
 
-DELIMITER ;
 
 
 DELIMITER $$
