@@ -1,0 +1,54 @@
+DROP TABLE compounds_lm_classification;
+
+CREATE TABLE lm_classification (
+    lm_classification_id INT AUTO_INCREMENT PRIMARY KEY,
+    category TEXT,
+    main_class TEXT,
+    subclass TEXT,
+    class_level4 VARCHAR(100)
+);
+
+
+CREATE TABLE compounds_lm_classification (
+    compound_id INT,
+    lm_classification_id INT,
+    PRIMARY KEY (compound_id , lm_classification_id ),
+    FOREIGN KEY (compound_id ) REFERENCES compounds(compound_id),
+    FOREIGN KEY (lm_classification_id ) REFERENCES lm_classification (lm_classification_id)
+);
+
+
+DELIMITER $$
+CREATE trg_compound_chain_insert
+AFTER INSERT ON compound_chain
+FOR EACH ROW
+BEGIN
+    UPDATE compounds_lipids_classification
+    SET num_chains = num_chains + NEW.number_chains
+    WHERE compound_id = NEW.compound_id;
+END$$
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_compound_chain_update
+AFTER UPDATE ON compound_chain
+FOR EACH ROW
+BEGIN
+    UPDATE compounds_lipids_classification
+    SET num_chains = num_chains - OLD.number_chains + NEW.number_chains
+    WHERE compound_id = NEW.compound_id;
+END$$
+
+
+
+DELIMITER $$
+
+CREATE TRIGGER trg_compound_chain_delete
+AFTER DELETE ON compound_chain
+FOR EACH ROW
+BEGIN
+    UPDATE compounds_lipids_classification
+    SET num_chains = num_chains - OLD.number_chains
+    WHERE compound_id = OLD.compound_id;
+END$$
