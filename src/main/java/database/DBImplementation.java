@@ -229,11 +229,6 @@ public class DBImplementation {
 
                 // Execute the update statement
                 int rowsAffected = pstmt.executeUpdate();
-                if (rowsAffected > 0) {
-                    System.out.println("Updated " + lipidTypeName + " successfully.");
-                } else {
-                    System.out.println("No record found for " + lipidTypeName);
-                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

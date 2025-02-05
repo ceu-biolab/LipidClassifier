@@ -358,25 +358,12 @@ public class Database {
                 String insertion = "INSERT IGNORE INTO compound_identifiers(compound_id, inchi, inchi_key, smiles) VALUES(?,?,?,?);";
 
                 try (PreparedStatement stmt = connection.prepareStatement(insertion)) {
-                    // Bind parameters for the prepared statement
                     stmt.setInt(1, compoundId);
-                    stmt.setString(2, inChI);  // No need to escape; PreparedStatement handles it
+                    stmt.setString(2, inChI);
                     stmt.setString(3, inChIKey);
                     stmt.setString(4, smiles);
 
-                    // Print debug information
-                    System.out.println("Compound ID: " + compoundId);
-                    System.out.println("Inchi: " + inChI);
-                    System.out.println("Inchi Key: " + inChIKey);
-                    System.out.println("Smiles: " + smiles);
-
-                    // Execute the INSERT statement
                     int affectedRows = stmt.executeUpdate();
-                    if (affectedRows > 0) {
-                        System.out.println("Identifier successfully inserted -> compoundId: " + compoundId);
-                    } else {
-                        System.out.println("Identifier not inserted (likely due to INSERT IGNORE) -> compoundId: " + compoundId);
-                    }
                 } catch (SQLException ex) {
                     System.out.println("Error inserting identifier for compoundId: " + compoundId + " InCHI: " + inChI);
                     ex.printStackTrace(); // Log detailed error for debugging
@@ -495,22 +482,5 @@ public class Database {
         }
         return id;
     }
-
-/*    public static int executeNewInsertion(PreparedStatement statement, String update) { // insertar, borrar o actualizar
-        int id = 0;
-        try {
-            statement.executeUpdate(update, Statement.RETURN_GENERATED_KEYS);
-            try (ResultSet provRS = statement.getGeneratedKeys()) {
-                if (provRS.next()) {
-                    id = provRS.getInt(1);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        //System.out.println("\n GENERATED KEY of " + update + " : " + id);
-        return id;
-    }
- */
 
 }

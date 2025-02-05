@@ -20,7 +20,7 @@ public class LipidCategoryMapper {
 
 
     public static void main(String[] args) {
-        String file = "C:/Users/34611/Desktop/INGENIERIA_BIOMEDICA/CUARTO_CARRERA/PROYECTOSII/LipidClassifier/lipidTypeClassification.csv";
+        String file = "resources/lipidTypeClassification.csv";
 
 
         try {
@@ -57,9 +57,7 @@ public class LipidCategoryMapper {
             DBImplementation.updateChainsDB(connection, allLipids);
 
 
-            //**DBImplementation.updateLipidTypesWithHeadAndFragmentation(connection, lipidTypeMap); //DONE
-
-
+            DBImplementation.updateLipidTypesWithHeadAndFragmentation(connection, lipidTypeMap); //DONE
 
         } catch (Exception e) {
             e.printStackTrace();

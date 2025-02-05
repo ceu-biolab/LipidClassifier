@@ -18,8 +18,14 @@ CREATE TABLE compounds_lm_classification (
 );
 
 
+ALTER TABLE compounds_lipids_classification
+ADD COLUMN lipid_type_RT VARCHAR(50) AFTER double_bonds, 
+ADD COLUMN lipid_type_fragmentation VARCHAR(50) AFTER lipid_type_RT;
+
+
+
 DELIMITER $$
-CREATE trg_compound_chain_insert
+CREATE TRIGGER trg_compound_chain_insert
 AFTER INSERT ON compound_chain
 FOR EACH ROW
 BEGIN
